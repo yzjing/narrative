@@ -1,0 +1,244 @@
+\documentclass[a4paper]{article}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\linespread{1.5}
+
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{booktabs}
+
+
+\title{Narrativity and Morality in Political Texts}
+\author{Elise Jing \\Center for Networks and Systems Research,\\ Indiana University Bloomington}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The moral foundations theory suggests that the Liberals and Conservatives in the United States rely on different dimensions of moral foundations \cite{graham2009liberals}, which is expressed in the contents of their discourses. Furthermore, morality is often conveyed through narratives. To see if people from these political families exhibit different levels of morality and narrativity in their linguistic patterns, I develop a method to measure the narrativity of texts in the U.S. Congressional Record, and use the lexicon from Graham et al.'s work \cite{graham2009liberals} to measure the morality of the same texts. The narrativity measurement is shown to be meaningful, and it is found that the Republican texts in general exhibits higher narrativity than the Democratic texts. However, using the morality lexicon appear to be not sufficient to capture the morality of these texts.
+\end{abstract}
+
+\section*{Theoretical background}
+Political discussions are often centered around moral issues such as abortion, the value of families, social welfare, and more. Underlying these issues are people's different moral values. The moral foundations theory developed by Haidt et al. \cite{graham2013moral}\cite{haidt2004intuitive}\cite{haidt2007moral} summarizes these moral values into five dimensions. They are: care/harm, expressed as caring towards the weak and anger towards hurting them; fairness/cheating, a preference for fairness in social cooperations; loyalty/betrayal towards a group or community; authority/subversion towards leaders and other authoritative figures, as well as social institutions such as law and police; and sanctity/degradation, the preference for ``clean'' and disgust for the ``unclean''' which can be literal or metaphorical. The moral foundations theory is a nativist theory, claiming that these moral orientations are innate rather than acquired, formed by adaptive challenges throughout evolution, although they are also shaped by social and cultural inputs during people's lives. 
+
+Focusing on the U.S. politics, Haidt, Graham and Nosek further hypothesize that the political liberals and conservatives in the U.S. rely on the moral foundations differently. The liberals only consider two moral foundations to be important, namely harm/care and fairness/cheating. On the contrary, conservatives consider all five foundations more equally. In their 2009 paper \cite{graham2009liberals}, they used several experiments to support this hypothesis.
+
+In another related study \cite{haidt2007moral}, they also suggest that morality is often expressed through narratives. Narrative is one of the fundamental forms for humans to represent the reality and history, helping people to make sense of disjointed events by putting them into a coherent story. In this process of narrativization, moral values are often introduced, as White even asked: ``Could we ever narrativize without moralizing?'' \cite{white1980value}. 
+
+In this paper, Haidt and Joseph name a few narratives of the American history. The liberals have an internalized ``liberal progress'' narrative: 
+
+\emph{The majority of people used to be oppressed, treated unequally and with unjust; however, the courageous fought against the powers and freed a lot of the oppressed people. We as successors must continue their errand and fight for more equality in the society. }
+
+Meanwhile, the conservatives have a different story of ``community lost'':
+
+\emph{People used to live in harmonious communities tied together by faith and tradition, however, this is broken by the modern lifestyle, science and the industrial revolutions. We must therefore hold to our values and resist these forces. }
+
+These narratives are not objective descriptions of history, but they provide interpretations of the world that fit with people's moral values. This nature of narratives has long been noticed and utilized in education to teach children about morality \cite{tappan1991narrative}\cite{tappan1989stories}. For example, even Disney's \emph{The Lion King} carries a strong moral message in its story \cite{ward1996lion}. 
+
+We may therefore hypothesize that a text is more likely to carry a moral message if it has a high degree of narrativity, i.e.~``narrative-ness'' \cite{narrativity}. However, an exact definition of narrativity is not easy to arrive at. Traditional narratology has proposed several definitions: narrativity as emplotment, considering whether a text carries the presence of a plot; as sequentiality, focusing on temporal causal connections; as eventfulness, considering the events in a text; and more.
+
+\section*{Quantifying narrativity and morality}
+Here I use the eventfulness definition to approach narrativity, as it is a well-established definition \cite{schmid2003narrativity}\cite{huhn2008functions}\cite{eventfulness} and is more ready to be operationalized, allowing for the possibility of performing an automatic and quantitative measurement. In particular, event detection is a popular topic in natural language processing (NLP) \cite{hogenboom2011overview}\cite{exner2011using}\cite{chambers2009unsupervised}, and many methods have been developed.
+
+However, the presence of events is not always an indicator for narrativity. The simplest example may be how a recipe is not a narrative \cite{ryan2007toward}. Consider this excerpt from a recipe:
+
+\emph{Heat 2 teaspoons of canola oil in a large skillet over medium-high heat. }
+
+\emph{Stir-fry chicken until nearly cooked through, about 5 minutes. }
+
+\emph{Remove chicken. }
+
+This text describes three events, but is obviously not a narrative because it lacks an agent, and therefore the events are more of some instructions than events that have been performed. To make it a narrative, an agent needs to be introduced, and we also need to know that the events have happened in the past. In English, this may be indicated by the usage of simple past tenses. These changes make the recipe a narrative:
+
+\emph{I heated 2 teaspoons of canola oil in a large skillet over medium-high heat, stir-fried chicken until nearly cooked through for about 5 minutes, and removed chicken.}
+
+Therefore to compute narrativity, we should consider not only events, but also agent-hood which can be indicated by personal pronouns, as well as the tense of the verbs evoking the events. However, another difficulty is that NLP often treats verbs as indicators of events, such as in semantic role labeling \cite{palmer2010semantic}, while not all verbs evoke events that serve narrative functions. The boundary between narrative verbs and non-narrative verbs is fuzzy. A summary provided by Meyer et al. \cite{meyer2013detecting} is: a verb is narrative if it evokes ordered events that happened in the past, and is non-narrative if it describes past states of affairs. For example, in the following two sentences used in their dataset, the bold verb in the first sentence is narrative and in the second one is non-narrative:
+
+\emph{We \textbf{decided} to support these two countries in their efforts to achieve their aim of accession in 2007.}
+
+\emph{His policies \textbf{were seen} as rife with contradictions.}
+
+Unfortunately, the difference between these two types of verbs is subtle, and there is not a well-established automatic method to classify them. \cite{meyer2013detecting} and \cite{grisot2014cross} provides a dataset of English verbs that are manually labeled as narrative or non-narrative for training purposes, which I use in this project.
+
+To detect morality from text, I simply follow the method in \cite{graham2009liberals}, using the lexicon that they created. The lexicon contains words that evoke one of the five moral foundations, and a text exhibits higher morality if it contains more words from the lexicon.
+
+In this project, I use these methods to quantitatively measure the degree of morality and of narrativity in text data from the U.S. Congressional Records. The correlation between the two features is examined to test the hypothesis that higher narrativity is associated with higher morality. I also focus on the partisan differences between liberal and conservative texts to test another hypothesis extended from \cite{graham2009liberals}, that texts expressing divergent political views exhibit morality and narrativity differently.
+
+
+%However, even taking these into accounts, not all events indicate narrativity. Some narratological theories make the distinction between \emph{event I}, which is any type of event; and \emph{event II}, events that satisfy certain conditions, and only event II contributes to the narrativity of a text\cite{narrativity}. 
+
+
+
+\section*{Methods}
+The main dataset for this project is the United States Congressional Record for the 114th Congress (January 3 2015 to January 2017), created by Gentzkow, Shapiro and Taddy from Stanford University \cite{114congress}. It includes the speeches spoken in both the U.S. House of Representatives and the U.S. Senate, recorded in text form. The metadata includes the date, chamber, speaker and his/her partisan affiliations, and more. Short speeches with less than 100 words are excluded during processing.
+
+A \emph{narrativity score} of a text is defined by considering two linguistic features: the frequency of narrative verbs, and the frequency of third person pronouns. The narrativity score is calculated by normalizing the sum of these frequencies with the length of the text:
+
+\begin{equation}
+s_n = \frac{f_{pp} + f_v}{N}
+\end{equation}
+
+Where $f_{pp}$ is the frequency of third person pronouns\footnote{In English, the personal pronouns are: he, him, his, himself, she, her, hers, herself, it, its, itself, they, their, theirs, themselves.}, $f_v$ is the frequency of narrative verbs, and N is the number of words in the text. 
+
+The set of narrative verbs was created in \cite{grisot2014cross} and shared by Grisot (See Introduction). It contains 436 verbs that are manually labeled by two independent annotators as narrative or non-narrative. Agreement between the annotators is tested and they introduced new annotators to resolve the conflicts. (See their paper for more details on the annotation process).
+
+Similarly, the \emph{morality score} is defined as the frequency of words in the morality lexicon, normalized by the length of the text. 
+
+\begin{equation}
+s_m = \frac{f_m}{N}
+\end{equation}
+
+Where $f_m$ is the frequency of words in the morality lexicon.
+
+The morality lexicon was created and shared in \cite{graham2009liberals}, containing 698 words including stems and their morphological variations. The authors manually listed synonyms for each of the moral dimensions (e.g. harm, hurt, injury, etc) and then curated the set. (See their paper for more details). 
+
+To test the performance of these measurements, I manually created some golden-standard data. For narrativity, I randomly sampled 10 texts from the dataset that I perceive as having high narrativity, and 10 with low narrativity, to create two separate collections. The same sampling is done to create two collections of high morality and low morality texts.
+
+
+\section*{Results}
+
+The 114th Congress records dataset contains 112,287 speeches. After filtering, 32,544 speeches remain. Some statistics of the speeches are summarized in table \ref{tab:stats}. 
+
+\begin{table}
+\centering
+\begin{tabular}{l|l|l|r}
+\toprule
+ &  Democratic & Republican & Total\\\hline
+House of Representatives & 10502 & 11094 & 21596 \\
+Senates & 5251 & 5697 & 10948  \\
+\hline
+Total & 15753 & 16791 & 32544\\
+\bottomrule
+\end{tabular}
+\caption{\label{tab:stats} Number of speeches in the Congressional Records dataset by party and by chamber.}
+\end{table}
+
+I first present the result of testing the narrativity and morality measurements with the golden standard (GS) data. Figure \ref{fig:test} compares the average narrativity scores for the GS data labeled with high and low narrativity, respectively, as well as the average morality scores for the GS data with high and low morality. The average narrativity score of the high narrativity GS is higher than the score of the low narrativity GS with statistical significance ($t - score \approx 2.57, p-value \approx 0.02$), suggesting that the metric for narrativity is effective. Meanwhile, the average morality score of the high morality GS does not show a significant difference with that of the low morality GS.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{narrativity_morality_score_test.pdf}
+\caption{\label{fig:test} Results of testing the narrativity and morality metrics with the golden standard (GS) data. The average narrativity scores and morality scores for the GS data with high/low narrativity/morality are calculated respectively. Average narrativity score for the GS data with high narrativity is significantly higher than the score of the GS data with low narrativity. However, There is no significant difference between the morality scores of the GS data with high and low morality.}
+\end{figure}
+
+Narrativity scores and morality scores are computed for each speech in the dataset. I start with examining the distribution of narrativity scores. In Figure \ref{fig:narrativity}, we can observe that most speeches have low narrativity scores between 0.02 and 0.04, with a few over 0.1. Comparing the partisan differences, the Republican speeches in general have slightly higher narrativity scores than the Democratic speeches, with more speeches distributed in the higher narrativity bins. This is consistent with the common intuition that Republicans and Democrats use different linguistic strategies to frame their political appeals, as discussed in books like \cite{lakoff2014all}, and that Republicans are more likely to use stories to convey their messages. 
+
+Regarding the chamber difference, we can also observe that the Senate speeches have considerably higher narrativity than the House of Representatives speeches. This may be explained by the fact that the Senate members don't have a time limit when they speak, and therefore have more time to incorporate narratives in their speeches.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{narr_score_partisan_chamber.pdf}
+\caption{\label{fig:narrativity} Normalized density distribution of the narrativity score of speeches categorized by party and by chamber. In general, the Republican speeches have slightly higher narrativity than the Democratic speeches, and the Senate speeches have higher narrativity than House of Representatives speeches.}
+\end{figure}
+
+Figure \ref{fig:morality} shows the distribution of morality scores. Most speeches have very low morality scores and none over 0.03, indicating that no more than 3\% of the words in the speech are contained in the morality lexicon. This is somewhat surprising because of the highly moralized nature of many political campaigns, and may also suggest that the morality measurement is not sufficient to capture the actual morality in these speeches (see Discussion). 
+
+Examining the partisan and chamber differences, it can be found that the in contrast to narrativity, Democratic speeches have slightly stronger morality than Republican speeches, and the House of Representatives speeches have stronger morality than the Senates speeches. However, it may not be very meaningful to interpret these differences without further verifying the effectiveness of the measurement.
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{moral_score_partisan_chamber.pdf}
+\caption{\label{fig:morality}Normalized density distribution of the morality score of speeches categorized by party and by chamber. Overall, the Democratic speeches have slightly higher morality scores than the Republican speeches, and the House of Representatives speeches have slightly higher morality scores than the Senate speeches.}
+\end{figure}
+
+From Figure \ref{fig:narrativity} and \ref{fig:morality}, the narrativity score and the morality score do not appear to be strongly related. For a more detailed analysis, I compute the Pearson correlation between the narrativity score and the morality score for the whole dataset and its subsets: the Democratic subset, the Republican, the Senate and the House of Representatives. I also consider the subset of speeches with high narrativity, defined as the speeches with narrativity scores in the top quartile; and similarly, the subset of speeches with high morality.
+
+The results are summarized in Table \ref{tab:correlations}. No correlation is observed between the narrativity score and the morality score in the dataset or any of its subsets. Again, it is uncertain how the result should be interpreted as the morality measurement may be not well defined.
+
+\begin{table}
+\centering
+\begin{tabular}{l|c}
+\toprule
+Dataset & Correlation between narrativity and morality \\\hline
+Complete dataset &  -0.05 ***\\
+Democratic & -0.08 ***\\
+Republican & -0.05 *** \\
+Senate & -0.05 *** \\
+House of Representatives & -0.03 ***\\
+High narrativity speeches & 0.02 ***\\
+High morality speeches & -0.02   \\
+\bottomrule
+\end{tabular}
+\caption{\label{tab:correlations} Pearson correlations between the narrativity score and the morality score in the dataset and its subsets. ***: $p-value < 0.01$. }
+\end{table}
+
+\section*{Discussion}
+The main challenge in this project is to develop methods for performing quantitative and automatic measurements of narrativity and morality. While the narrativity score is shown to effectively capture the narrativity of the political texts, a few caveats remain with this method.
+
+First of all, the narrative verbs obtained from \cite{grisot2014cross} is not a complete set. It contains 436 verbs, which does not cover all common verbs in English. For comparison, the Framenet project that annotates common verbs associated with events in English has 1224 verbs currently \cite{framenetstatus}. To improve this method, we would need a more comprehensive annotation.
+
+It should also be noted that the golden standard data that I created is very small (10 texts for each category), and with only one labeler. To improve its validity, we will need to increase its size and have multiple labelers to label them independently.
+
+Events, agenthood and tenses are also not the only possible features associated with narrativity. In computational narratology, there has been a tendency to focus on the \emph{fabula} rather than \emph{syuzhet} -- the raw materials of a narrative rather than the way in which the materials are organized \cite{Sklovskij1965art}, because the fabula can be captured in linguistic entities, and is technically less difficult to work with. The syuzhet, on the other hand, is abstract and deeper than just linguistic features \cite{greimas1971narrative}. In this case, our features all belong to the fabula, describing the events, agents and temporal information. They do not consider other approaches to narrativity that rely more on the syuzhet, such as emplotment or sequentiality. 
+
+The attempt to quantify narrativity is relevant to a more general challenge, that many concepts related to the study of narratives are fuzzy and do not have clear definitions. Similar to concepts in many other humanities disciplines, they are largely influenced by historical contexts and subjective interpretations. When developing computational methods, we often try to use a simple and ``clear'' definition, which inevitably overlooks these subtleties. 
+
+It is not surprising that using the morality lexicon does not yield satisfactory results. In fact, the original authors of the lexicon have already experimented on a similar dataset -- the party candidates' convention speeches -- and found it to be unsatisfactory because these texts are ``so full of moral appeals that extracting distinctive moral content was unfeasible'' \cite{graham2009liberals}. Their goal was more complicated, trying to find if a text is in support of or rejects a certain moral foundation, while in this project, I'm only interested in the strength of morality and not the polarity; however, it is likely that the method doesn't work well with the Congressional Records data because of the same reason.
+
+Quantifying morality is similar to a large field in NLP: sentiment analysis (SA). It faces many challenges that SA has been dealing with. A major one is that sentiments or moral values may not be directly captured by keywords that can be contained in a lexicon. For example, in a House speech that supports a bill for lowering the rent for low-income people, there is a sentence:
+
+\emph{The bill allows for homeownership for those whose American Dream of such has been shattered.}
+
+Human readers with a little background knowledge can tell that  ``those whose American Dreams have been shattered'' refers to the low-income groups, and by supporting them, this text is calling for better equity in the society, evoking the fairness-cheating moral foundation. However, this can not be identified by scanning for words in the morality lexicon.
+
+Another classic problem in sentiment analysis is how to identify negations. For example, the sentence ``Do not let the authority tell you what to do'' evokes the authority/subversion moral foundation, but using the morality lexicon, we cannot tell whether it supports or rejects authority. In \cite{graham2009liberals}, the authors used manual reading to identify the polarity of such expressions. In traditional SA literature, it has long been recognized that lexicon-based methods are not sufficient to capture polarity \cite{pang2008opinion}, and that more complex features such as the sentence structures or word embeddings \cite{maas2011learning} will be beneficial.
+
+The purpose of measuring narrativity and morality is to see how they are exhibited in texts. In this project, I have shown that the Republican texts in general has higher narrativity than Democratic texts, which is consistent with our intuitions. With a better tested measurement for narrativity, we will be able to prove the robustness of this result. If we can create a good measurement for morality, we will also be able to see if narrativity and morality are correlated or orthogonal. Besides the Congressional Records data, we can also work with other political texts such as the fake news data, and examine if narrativity and morality are related to other features such as popularity and spreading.
+
+\subsection*{Acknowledgement}
+The author thanks Cristina Grisot for sharing the narrative verbs dataset and for her comments.
+
+\bibliographystyle{abbrv}
+\bibliography{main}
+
+\end{document}
+
+
+\subsection{How to include Figures}
+
+First you have to upload the image file from your computer using the upload link the project menu. Then use the includegraphics command to include it in your document. Use the figure environment and the caption command to add a number and a caption to your figure. See the code for Figure \ref{fig:frog} in this section for an example.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.3\textwidth]{frog.jpg}
+\caption{\label{fig:frog}This frog was uploaded via the project menu.}
+\end{figure}
+
+\subsection{How to add Tables}
+
+Use the table and tabular commands for basic tables --- see Table~\ref{tab:widgets}, for example. 
+
+\begin{table}
+\centering
+\begin{tabular}{l|r}
+Item & Quantity \\\hline
+Widgets & 42 \\
+Gadgets & 13
+\end{tabular}
+\caption{\label{tab:widgets}An example table.}
+\end{table}
+
+
+\subsection{How to add Lists}
+
+You can make lists with automatic numbering \dots
+
+\begin{enumerate}
+\item Like this,
+\item and like this.
+\end{enumerate}
+\dots or bullet points \dots
+\begin{itemize}
+\item Like this,
+\item and like this.
+\end{itemize}
