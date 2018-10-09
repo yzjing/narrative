@@ -46,6 +46,7 @@ class eventMaker:
 			return str(lesk(original_sent.split(), word, pos='n'))
 		else:
 			return word.lower()
+
 	def lookupAdj(self,word, pos, original_sent):
 		#print(word, pos)
 		# This is a function that supports generalize_noun function 
@@ -55,19 +56,6 @@ class eventMaker:
 			return str(lesk(original_sent.split(), word, pos='a'))
 		else:
 			return word.lower()	
-		'''
-		hyper = lambda s: s.hypernyms()
-		TREE = word1.tree(hyper, depth=6)
-		temp_tree = TREE		
-		for i in range(2):
-			try:
-				temp_tree = temp_tree[1]
-			except:
-				break
-		result = temp_tree[0]
-
-		return str(result)
-		'''
 
 
 	def generalize_noun(self, word, tokens, named_entities, original_sent):
@@ -125,74 +113,62 @@ class eventMaker:
 		else:
 			return word
 
+	def build_coref_dic(self, dependencies):
+		corefs = dependencies["corefs"]
+		coref_dict = {}
+		for i in corefs:
+			# print(i)
+			# print(corefs[i])
+			for item in corefs[i]:
+				# print(item)
+				cd = dict(item)
+				if cd["isRepresentativeMention"] == False and cd['type'] == 'PROPER':
+					cd["isRepresentativeMention"] == True
+	
+				if cd["isRepresentativeMention"] == True:
+					v = (cd['sentNum'], cd['headIndex'])
+			for item in corefs[i]:
+				cd = dict(item)
+				if cd['gender'] == 'MALE' or cd['gender'] == 'FEMALE':# or cd['type'] == 'PROPER':
+					if cd["isRepresentativeMention"] == False:
+						coref_dict[(cd['sentNum'], cd['headIndex'])] = v
+		return coref_dict
+
+	def check_coref(self, coref_dict, sentid, tokenid, dependencies):
+		if (sentid, tokenid) in coref_dict.keys():
+			coref_sent_idx, coref_token_idx = coref_dict[(sentid, tokenid)]
+			# print(coref_sent_idx, coref_token_idx)
+			coref_word = dependencies[coref_sent_idx-1]['tokens'][coref_token_idx-1]['word']
+			return coref_word
+		else:
+			return False
 
 	def callStanford(self,sentence):
 		# This function can call Stanford CoreNLP tool and support getEvent function.
 		encoding = "utf8"
-		'''cmd = ["java", "-cp", stanford_dir+"/*","-Xmx20g",
-			"edu.stanford.nlp.pipeline.StanfordCoreNLP",
-			"-annotators", "tokenize,ssplit,pos,lemma,depparse,ner", 
-			"-nthreads","10",
-			'-outputFormat', 'json',
-			"-parse.flags", "",
-			'-encoding', encoding,
-			'-model', models+'/edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz'
-		]'''
 		cmd = ["java", "-cp", stanford_dir+"/*","-Xmx20g", "edu.stanford.nlp.pipeline.StanfordCoreNLPClient",
-			"-annotators", "tokenize,ssplit,parse,ner,pos,lemma,depparse", #ner,tokenize,ssplit,pos,lemma,parse,depparse #tokenize,ssplit,pos,lemma,depparse,ner
+			"-annotators", "tokenize,ssplit,parse,ner,pos,lemma,depparse,coref", #ner,tokenize,ssplit,pos,lemma,parse,depparse #tokenize,ssplit,pos,lemma,depparse,ner
 			'-outputFormat','json',
 			"-parse.flags", "",
 			'-encoding', encoding,
 			'-model', models+'/edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz',"-backends","localhost:9000,12"]
+
 		input_ = ""
 		default_options = ' '.join(_java_options)
 		with tempfile.NamedTemporaryFile(mode='wb', delete=False) as input_file:
 			# Write the actual sentences to the temporary input file
 			if isinstance(sentence, compat.text_type) and encoding:
 				input_ = sentence.encode(encoding)
-				# print(input_)
 			input_file.write(input_)
 			input_file.flush()
 			input_file.seek(0)
-			# print(input_file)
+			#print(input_file)
 			devnull = open(os.devnull, 'w')
-			out = subprocess.check_output(cmd, stdin=input_file)#, stderr=devnull)
-			# print(out)
+			out = subprocess.check_output(cmd, stdin=input_file, stderr=devnull)
 			out = out.replace(b'\xc2\xa0',b' ')
 			out = out.replace(b'\xa0',b' ')
 			out = out.replace(b'NLP>',b'')
-			# print(out)
-			out = out.decode(encoding)
 			#print(out)
-		os.unlink(input_file.name)
-		# Return java configurations to their default values.
-		config_java(options=default_options, verbose=False)
-		return out
-
-
-	def callStanfordNER(self,sentence):
-		# This function can call Stanford Name Entity Recognizer and support getEvent function.
-		encoding = "utf8"
-		default_options = ' '.join(_java_options)
-		with tempfile.NamedTemporaryFile(mode='wb', delete=False) as input_file:
-			# Write the actual sentences to the temporary input file
-			if isinstance(sentence, compat.text_type) and encoding:
-				input_ = sentence.encode(encoding)
-			input_file.write(input_)
-			input_file.flush()
-			input_file.seek(0)
-			cmd = ["java", "-cp", ner_loc+"/stanford-ner.jar:"+ner_loc+"/lib/*","-Xmx20g",
-						"edu.stanford.nlp.ie.crf.CRFClassifier",
-						"-loadClassifier",ner_loc+"/classifiers/english.all.3class.distsim.crf.ser.gz",
-						'-encoding', encoding,
-						'-textFile', input_file.name,
-						"-ner.useSUTime", "false"
-					]
-			devnull = open(os.devnull, 'w')
-			out = subprocess.check_output(cmd, stderr=devnull)
-			#print(out)
-			out = out.replace(b'\xc2\xa0',b' ')
-			out = out.replace(b'\xa0',b' ')
 			out = out.decode(encoding)
 			#print(out)
 		os.unlink(input_file.name)
@@ -205,13 +181,6 @@ class eventMaker:
 	# This is a function that can extract the event format from the sentence given.
 		words = self.sentence.split()
 		original_sent = self.sentence.strip()
-		# print(original_sent)
-		#ner = self.callStanfordNER(original_sent).split() # get the name entities in the sentence
-		#ner_dict = {} # Example: "Sally":"PERSON"
-		#for pair in ner:
-		#	word, label = pair.rsplit("/", 1)
-		#	ner_dict[word] = label
-		#print(ner_dict)
 
 		json_data = self.callStanford(self.sentence)
 		# print(json_data)
@@ -221,17 +190,14 @@ class eventMaker:
 		for i, sentence in enumerate(all_json):
 			for token in sentence["tokens"]:
 				ner_dict2[token["word"]] = token["ner"]
-		#print(ner_dict2)
 
-		#print(all_json)
-		#print(len(all_json))
-	
+		coref_dict = self.build_coref_dic(d)
+		
 		for sent_num, sentence in enumerate(all_json): # for each sentence in the entire input
 			tokens = defaultdict(list) 
-			#print(sentence)
+
 			for token in sentence["tokens"]: 
 				tokens[token["word"]] = [token["lemma"], token["pos"], ner_dict2[token["word"]],token["index"]] # each word in the dictionary has a list of [lemma, POS, NER]
-
 
 			deps = sentence["enhancedPlusPlusDependencies"]	 # retrieve the dependencies
 			named_entities = []
@@ -244,9 +210,10 @@ class eventMaker:
 			chainMods = {} # chaining of mods
 			index = defaultdict(list)  #for identifying part-of-speech
 			index["EmptyParameter"] = -1
+
 			# create events
-			for d in deps:
-				#subject
+			for token_id, d in enumerate(deps):
+
 				if 'nsubj' in d["dep"] and "RB" not in tokens[d["dependentGloss"]][1]: #adjective? #"csubj" identifies a lot of things wrong 
 					#print(tokens[d["dependentGloss"]][1])
 					if d["governorGloss"] not in verbs:
@@ -254,7 +221,11 @@ class eventMaker:
 						if not "VB" in tokens[d["governorGloss"]][1]: continue
 						verbs.append(d["governorGloss"])
 						index[d["governorGloss"]] = d["governor"] #adding index
-						subjects.append(d["dependentGloss"])
+						coref = self.check_coref(coref_dict, sent_num+1, token_id, all_json)
+						if coref:
+							subjects.append(coref)
+						else:
+							subjects.append(d["dependentGloss"])
 						index[d["dependentGloss"]] = d["dependent"] #adding index to subject
 						pos[d["governorGloss"]] = tokens[d["governorGloss"]][1]
 						pos[d["dependentGloss"]] = tokens[d["dependentGloss"]][1]
@@ -262,10 +233,18 @@ class eventMaker:
 						objects.append('EmptyParameter')
 					elif d["governorGloss"] in verbs:
 						if subjects[verbs.index(d["governorGloss"])] == "EmptyParameter": # if verb alrady exist 
-							subjects[verbs.index(d["governorGloss"])] = d["dependentGloss"]
+							coref = self.check_coref(coref_dict, sent_num+1, d["governor"], all_json)
+							if coref:
+								ubjects[verbs.index(d["governorGloss"])] = coref
+							else:
+								subjects[verbs.index(d["governorGloss"])] = d["dependentGloss"]
 							index[d["dependentGloss"]] = d["dependent"]
 						else:
-							subjects.append(d["dependentGloss"])
+							coref = self.check_coref(coref_dict, sent_num+1, d["dependent"], all_json)
+							if coref:
+								subjects.append(coref)
+							else:
+								subjects.append(d["dependentGloss"])
 							index[d["dependentGloss"]] = d["dependent"]
 							verbs.append(d["governorGloss"])
 							index[d["governorGloss"]] = d["governor"]
@@ -295,7 +274,11 @@ class eventMaker:
 					elif 'conj' in d["dep"] and d["governorGloss"] in subjects: # governor and dependent are both subj. e.g. Amy and Sheldon
 						loc = subjects.index(d["governorGloss"])
 						verb = verbs[loc] #verb already exist. question: should the verb have the same Part-of-Speech tag?
-						subjects.append(d["dependentGloss"])
+						coref = self.check_coref(coref_dict, sent_num+1, d["dependent"], all_json)
+						if coref:
+							subjects.append(coref)
+						else:
+							subjects.append(d["dependentGloss"])
 						index[d["dependentGloss"]] = d["dependent"]
 						verbs.append(verb)
 						modifiers.append('EmptyParameter')
@@ -353,7 +336,6 @@ class eventMaker:
 								modifiers[verbs.index(v)] = d["dependentGloss"]
 								index[d["dependentGloss"]] = d["dependent"]
 								pos[d["dependentGloss"]] = tokens[d["dependentGloss"]][1]
-
 
 
 				
@@ -443,28 +425,19 @@ class eventMaker:
 				# 		#print(index[label])
 				# 		if tokens[label][-1] == index[label]:
 				# 			poslabel = tokens[label][1]
-				# 	#print("end")
-				# #print(pos)
-				# #print(index)
-				# 	#poslabel = tokens[label][1]
-				# #self.events.append([a1,b1,c1,label,d1])
+
 				self.events.append([a,b,c,d])
-				#print(named_entities)
-				#print([a1,pos[a],pos1,b1,pos[b],pos2,c1,pos[c],pos3,label,poslabel,d1,pos[d],pos4])
-				#self.events.append([a1,pos1,b1,pos2,c1,pos3,label,poslabel,d1,pos4])
-				#self.events.append([a1,pos[a],pos1,b1,pos[b],pos2,c1,pos[c],pos3,label,poslabel,d1,pos[d],pos4])
 
 line = '''The nation of Panem consists of a wealthy Capitol and twelve poorer districts. As punishment for a past rebellion, each district must provide a boy and girl  between the ages of 12 and 18 selected by lottery  for the annual Hunger Games. The tributes must fight to the death in an arena; the sole survivor is rewarded with fame and wealth. In her first Reaping, 12-year-old Primrose Everdeen is chosen from District 12. Her older sister Katniss volunteers to take her place. Peeta Mellark, a baker's son who once gave Katniss bread when she was starving, is the other District 12 tribute. Katniss and Peeta are taken to the Capitol, accompanied by their frequently drunk mentor, past victor Haymitch Abernathy. He warns them about the "Career" tributes who train intensively at special academies and almost always win. During a TV interview with Caesar Flickerman, Peeta unexpectedly reveals his love for Katniss. She is outraged, believing it to be a ploy to gain audience support, as "sponsors" may provide in-Games gifts of food, medicine, and tools. However, she discovers Peeta meant what he said. The televised Games begin with half of the tributes killed in the first few minutes; Katniss barely survives ignoring Haymitch's advice to run away from the melee over the tempting supplies and weapons strewn in front of a structure called the Cornucopia. Peeta forms an uneasy alliance with the four Careers. They later find Katniss and corner her up a tree. Rue, hiding in a nearby tree, draws her attention to a poisonous tracker jacker nest hanging from a branch. Katniss drops it on her sleeping besiegers. They all scatter, except for Glimmer, who is killed by the insects. Hallucinating due to tracker jacker venom, Katniss is warned to run away by Peeta. Rue cares for Katniss for a couple of days until she recovers. Meanwhile, the alliance has gathered all the supplies into a pile. Katniss has Rue draw them off, then destroys the stockpile by setting off the mines planted around it. Furious, Cato kills the boy assigned to guard it. As Katniss runs from the scene, she hears Rue calling her name. She finds Rue trapped and releases her. Marvel, a tribute from District 1, throws a spear at Katniss, but she dodges the spear, causing it to stab Rue in the stomach instead. Katniss shoots him dead with an arrow. She then comforts the dying Rue with a song. Afterward, she gathers and arranges flowers around Rue's body. When this is televised, it sparks a riot in Rue's District 11. President Snow summons Seneca Crane, the Gamemaker, to express his displeasure at the way the Games are turning out. Since Katniss and Peeta have been presented to the public as "star-crossed lovers", Haymitch is able to convince Crane to make a rule change to avoid inciting further riots. It is announced that tributes from the same district can win as a pair. Upon hearing this, Katniss searches for Peeta and finds him with an infected sword wound in the leg. She portrays herself as deeply in love with him and gains a sponsor's gift of soup. An announcer proclaims a feast, where the thing each survivor needs most will be provided. Peeta begs her not to risk getting him medicine. Katniss promises not to go, but after he falls asleep, she heads to the feast. Clove ambushes her and pins her down. As Clove gloats, Thresh, the other District 11 tribute, kills Clove after overhearing her tormenting Katniss about killing Rue. He spares Katniss "just this time...for Rue". The medicine works, keeping Peeta mobile. Foxface, the girl from District 5, dies from eating nightlock berries she stole from Peeta; neither knew they are highly poisonous. Crane changes the time of day in the arena to late at night and unleashes a pack of hound-like creatures to speed things up. They kill Thresh and force Katniss and Peeta to flee to the roof of the Cornucopia, where they encounter Cato. After a battle, Katniss wounds Cato with an arrow and Peeta hurls him to the creatures below. Katniss shoots Cato to spare him a prolonged death. With Peeta and Katniss apparently victorious, the rule change allowing two winners is suddenly revoked. Peeta tells Katniss to shoot him. Instead, she gives him half of the nightlock. However, before they can commit suicide, they are hastily proclaimed the victors of the 74th Hunger Games. Haymitch warns Katniss that she has made powerful enemies after her display of defiance. She and Peeta return to District 12, while Crane is locked in a room with a bowl of nightlock berries, and President Snow considers the situation.'''
-
 maker = eventMaker(line)
 maker.getEvent()
 for e in maker.events:
 	print(e)
-with open('event_output.txt', 'w') as f:
-	for event in maker.events:
-		event = " ".join(event)
-		f.write(event)
-		f.write('\n')
+output = []
+quit()
+for event in maker.events:
+	sentence = " ".join(event)
+	f.write(sentence+" @@@@ "+line)
 quit()
 	#print(sentence+"@@@@"+line)
 
