@@ -122,14 +122,19 @@ class eventMaker:
 			for item in corefs[i]:
 				# print(item)
 				cd = dict(item)
+				#We want the representative one to be the name, not pronoun.
 				if cd["isRepresentativeMention"] == False and cd['type'] == 'PROPER':
 					cd["isRepresentativeMention"] == True
-	
+
+				if cd["isRepresentativeMention"] == True and cd['type'] != 'PROPER':
+					cd["isRepresentativeMention"] == False
+
 				if cd["isRepresentativeMention"] == True:
 					v = (cd['sentNum'], cd['headIndex'])
+
 			for item in corefs[i]:
 				cd = dict(item)
-				if cd['gender'] == 'MALE' or cd['gender'] == 'FEMALE':# or cd['type'] == 'PROPER':
+				if cd['gender'] == 'MALE' or cd['gender'] == 'FEMALE':
 					if cd["isRepresentativeMention"] == False:
 						coref_dict[(cd['sentNum'], cd['headIndex'])] = v
 		return coref_dict
@@ -192,7 +197,7 @@ class eventMaker:
 				ner_dict2[token["word"]] = token["ner"]
 
 		coref_dict = self.build_coref_dic(d)
-		
+	
 		for sent_num, sentence in enumerate(all_json): # for each sentence in the entire input
 			tokens = defaultdict(list) 
 
@@ -213,7 +218,6 @@ class eventMaker:
 
 			# create events
 			for token_id, d in enumerate(deps):
-
 				if 'nsubj' in d["dep"] and "RB" not in tokens[d["dependentGloss"]][1]: #adjective? #"csubj" identifies a lot of things wrong 
 					#print(tokens[d["dependentGloss"]][1])
 					if d["governorGloss"] not in verbs:
@@ -221,6 +225,8 @@ class eventMaker:
 						if not "VB" in tokens[d["governorGloss"]][1]: continue
 						verbs.append(d["governorGloss"])
 						index[d["governorGloss"]] = d["governor"] #adding index
+						# Here sent_num starts from 0, but in the coref data starts from 1.
+						# token_id starts from 0, but in the token data starts from 1?
 						coref = self.check_coref(coref_dict, sent_num+1, token_id, all_json)
 						if coref:
 							subjects.append(coref)
@@ -233,6 +239,7 @@ class eventMaker:
 						objects.append('EmptyParameter')
 					elif d["governorGloss"] in verbs:
 						if subjects[verbs.index(d["governorGloss"])] == "EmptyParameter": # if verb alrady exist 
+							# d["govenor"] is the token id of the governor
 							coref = self.check_coref(coref_dict, sent_num+1, d["governor"], all_json)
 							if coref:
 								ubjects[verbs.index(d["governorGloss"])] = coref
@@ -361,83 +368,83 @@ class eventMaker:
 				# 		self.nouns[a1].append(tokens[a][0])
 				# else:
 				# 	a1 = a
-				# if b != 'EmptyParameter':
-				# 	if index[b] == tokens[b][-1]: #may have issue in looping
-				# 		pos2 = tokens[b][1]
-				# 	b1 = self.generalize_verb(b, tokens) #changed line
-				# 	self.verbs[b1].append(tokens[b][0])
-				# else:
-				# 	b1 = b
-				# if c != 'EmptyParameter':
-				# 	if index[c] == tokens[c][-1]:
-				# 		pos3 = tokens[c][1]
-				# 	c1, named_entities = self.generalize_noun(c, tokens, named_entities, original_sent)
-				# 	if "<NE>" in c1:
-				# 		self.nouns["<NE>"].append(tokens[c][0])
-				# 	elif c1 == c:
-				# 		c1 = self.generalize_verb(c, tokens) #changed line
-				# 		self.verbs[c1].append(tokens[c][0])
-				# 	else:
-				# 		self.nouns[c1].append(tokens[c][0])
-				# else:
-				# 	c1 = c
-				# if d == 'EmptyParameter': #adding new lines start. 
-				# 	label = 'EmptyParameter'
-				# else:
-				# 	label = 'None' #change from Exist
-				# 	for dep in deps:
-				# 		if b == dep["governorGloss"] and d == dep["dependentGloss"] and "nmod" in dep["dep"]:
-				# 			if ":" in dep["dep"]:
-				# 				label = dep["dep"].split(":")[1]  # shoud this line be added??
-				# 			num = dep['dependent']
-				# 			#print(dep)
-				# 			#print("number:")
-				# 			#print(num)
-				# 			#print(type(num))
-				# 	for dep in deps: # how about obl dependency?
-				# 		if b == dep["governorGloss"] and d == dep["dependentGloss"] and "obl" in dep["dep"]:
-				# 			if ":" in dep["dep"]:
-				# 				label = dep["dep"].split(":")[1]
-				# 			num = dep['dependent']
-				# 			#print(dep)
+				if b != 'EmptyParameter':
+					if index[b] == tokens[b][-1]: #may have issue in looping
+						pos2 = tokens[b][1]
+					b1 = self.generalize_verb(b, tokens) #changed line
+					self.verbs[b1].append(tokens[b][0])
+				else:
+					b1 = b
+				if c != 'EmptyParameter':
+					if index[c] == tokens[c][-1]:
+						pos3 = tokens[c][1]
+					c1, named_entities = self.generalize_noun(c, tokens, named_entities, original_sent)
+					if "<NE>" in c1:
+						self.nouns["<NE>"].append(tokens[c][0])
+					elif c1 == c:
+						c1 = self.generalize_verb(c, tokens) #changed line
+						self.verbs[c1].append(tokens[c][0])
+					else:
+						self.nouns[c1].append(tokens[c][0])
+				else:
+					c1 = c
+				if d == 'EmptyParameter': #adding new lines start. 
+					label = 'EmptyParameter'
+				else:
+					label = 'None' #change from Exist
+					for dep in deps:
+						if b == dep["governorGloss"] and d == dep["dependentGloss"] and "nmod" in dep["dep"]:
+							if ":" in dep["dep"]:
+								label = dep["dep"].split(":")[1]  # shoud this line be added??
+							num = dep['dependent']
+							#print(dep)
+							#print("number:")
+							#print(num)
+							#print(type(num))
+					for dep in deps: # how about obl dependency?
+						if b == dep["governorGloss"] and d == dep["dependentGloss"] and "obl" in dep["dep"]:
+							if ":" in dep["dep"]:
+								label = dep["dep"].split(":")[1]
+							num = dep['dependent']
+							#print(dep)
 								
-				# 	for dep in deps:
-				# 		if "case" in dep["dep"] and d == dep["governorGloss"] and num == dep['governor']: # #what if modifier is related to multiple labels?
-				# 			label = dep["dependentGloss"]	#adding new lines end
-				# 			index[label] = dep["dependent"]
-				# 			#print("label:")
-				# 			#print(num)
-				# 			#print(dep['governor'])
-				# 			#print(type(dep['governor']))
-				# if d != 'EmptyParameter':
-				# 	if index[d] == tokens[d][-1]:
-				# 		pos4 = tokens[d][1]
-				# 	d1, named_entities = self.generalize_noun(d, tokens, named_entities, original_sent)
-				# 	if "<NE>" in d1:
-				# 		self.nouns["<NE>"].append(tokens[d][0])
-				# 	else:
-				# 		self.nouns[d1].append(tokens[d][0])
-				# else:
-				# 	d1 = d	
-				# if label != "EmtpyParameter" and label != "None":
-				# 	if len(tokens[label]) == 4:
-				# 		#print(tokens[label])
-				# 		#print(index[label])
-				# 		if tokens[label][-1] == index[label]:
-				# 			poslabel = tokens[label][1]
+					for dep in deps:
+						if "case" in dep["dep"] and d == dep["governorGloss"] and num == dep['governor']: # #what if modifier is related to multiple labels?
+							label = dep["dependentGloss"]	#adding new lines end
+							index[label] = dep["dependent"]
+							#print("label:")
+							#print(num)
+							#print(dep['governor'])
+							#print(type(dep['governor']))
+				if d != 'EmptyParameter':
+					if index[d] == tokens[d][-1]:
+						pos4 = tokens[d][1]
+					d1, named_entities = self.generalize_noun(d, tokens, named_entities, original_sent)
+					if "<NE>" in d1:
+						self.nouns["<NE>"].append(tokens[d][0])
+					else:
+						self.nouns[d1].append(tokens[d][0])
+				else:
+					d1 = d	
+				if label != "EmtpyParameter" and label != "None":
+					if len(tokens[label]) == 4:
+						#print(tokens[label])
+						#print(index[label])
+						if tokens[label][-1] == index[label]:
+							poslabel = tokens[label][1]
 
-				self.events.append([a,b,c,d])
+				self.events.append([a,b1,c1,d1])
 
-line = '''The nation of Panem consists of a wealthy Capitol and twelve poorer districts. As punishment for a past rebellion, each district must provide a boy and girl  between the ages of 12 and 18 selected by lottery  for the annual Hunger Games. The tributes must fight to the death in an arena; the sole survivor is rewarded with fame and wealth. In her first Reaping, 12-year-old Primrose Everdeen is chosen from District 12. Her older sister Katniss volunteers to take her place. Peeta Mellark, a baker's son who once gave Katniss bread when she was starving, is the other District 12 tribute. Katniss and Peeta are taken to the Capitol, accompanied by their frequently drunk mentor, past victor Haymitch Abernathy. He warns them about the "Career" tributes who train intensively at special academies and almost always win. During a TV interview with Caesar Flickerman, Peeta unexpectedly reveals his love for Katniss. She is outraged, believing it to be a ploy to gain audience support, as "sponsors" may provide in-Games gifts of food, medicine, and tools. However, she discovers Peeta meant what he said. The televised Games begin with half of the tributes killed in the first few minutes; Katniss barely survives ignoring Haymitch's advice to run away from the melee over the tempting supplies and weapons strewn in front of a structure called the Cornucopia. Peeta forms an uneasy alliance with the four Careers. They later find Katniss and corner her up a tree. Rue, hiding in a nearby tree, draws her attention to a poisonous tracker jacker nest hanging from a branch. Katniss drops it on her sleeping besiegers. They all scatter, except for Glimmer, who is killed by the insects. Hallucinating due to tracker jacker venom, Katniss is warned to run away by Peeta. Rue cares for Katniss for a couple of days until she recovers. Meanwhile, the alliance has gathered all the supplies into a pile. Katniss has Rue draw them off, then destroys the stockpile by setting off the mines planted around it. Furious, Cato kills the boy assigned to guard it. As Katniss runs from the scene, she hears Rue calling her name. She finds Rue trapped and releases her. Marvel, a tribute from District 1, throws a spear at Katniss, but she dodges the spear, causing it to stab Rue in the stomach instead. Katniss shoots him dead with an arrow. She then comforts the dying Rue with a song. Afterward, she gathers and arranges flowers around Rue's body. When this is televised, it sparks a riot in Rue's District 11. President Snow summons Seneca Crane, the Gamemaker, to express his displeasure at the way the Games are turning out. Since Katniss and Peeta have been presented to the public as "star-crossed lovers", Haymitch is able to convince Crane to make a rule change to avoid inciting further riots. It is announced that tributes from the same district can win as a pair. Upon hearing this, Katniss searches for Peeta and finds him with an infected sword wound in the leg. She portrays herself as deeply in love with him and gains a sponsor's gift of soup. An announcer proclaims a feast, where the thing each survivor needs most will be provided. Peeta begs her not to risk getting him medicine. Katniss promises not to go, but after he falls asleep, she heads to the feast. Clove ambushes her and pins her down. As Clove gloats, Thresh, the other District 11 tribute, kills Clove after overhearing her tormenting Katniss about killing Rue. He spares Katniss "just this time...for Rue". The medicine works, keeping Peeta mobile. Foxface, the girl from District 5, dies from eating nightlock berries she stole from Peeta; neither knew they are highly poisonous. Crane changes the time of day in the arena to late at night and unleashes a pack of hound-like creatures to speed things up. They kill Thresh and force Katniss and Peeta to flee to the roof of the Cornucopia, where they encounter Cato. After a battle, Katniss wounds Cato with an arrow and Peeta hurls him to the creatures below. Katniss shoots Cato to spare him a prolonged death. With Peeta and Katniss apparently victorious, the rule change allowing two winners is suddenly revoked. Peeta tells Katniss to shoot him. Instead, she gives him half of the nightlock. However, before they can commit suicide, they are hastily proclaimed the victors of the 74th Hunger Games. Haymitch warns Katniss that she has made powerful enemies after her display of defiance. She and Peeta return to District 12, while Crane is locked in a room with a bowl of nightlock berries, and President Snow considers the situation.'''
-maker = eventMaker(line)
-maker.getEvent()
-for e in maker.events:
-	print(e)
-output = []
-quit()
-for event in maker.events:
-	sentence = " ".join(event)
-	f.write(sentence+" @@@@ "+line)
-quit()
+# line = '''The nation of Panem consists of a wealthy Capitol and twelve poorer districts. As punishment for a past rebellion, each district must provide a boy and girl  between the ages of 12 and 18 selected by lottery  for the annual Hunger Games. The tributes must fight to the death in an arena; the sole survivor is rewarded with fame and wealth. In her first Reaping, 12-year-old Primrose Everdeen is chosen from District 12. Her older sister Katniss volunteers to take her place. Peeta Mellark, a baker's son who once gave Katniss bread when she was starving, is the other District 12 tribute. Katniss and Peeta are taken to the Capitol, accompanied by their frequently drunk mentor, past victor Haymitch Abernathy. He warns them about the "Career" tributes who train intensively at special academies and almost always win. During a TV interview with Caesar Flickerman, Peeta unexpectedly reveals his love for Katniss. She is outraged, believing it to be a ploy to gain audience support, as "sponsors" may provide in-Games gifts of food, medicine, and tools. However, she discovers Peeta meant what he said. The televised Games begin with half of the tributes killed in the first few minutes; Katniss barely survives ignoring Haymitch's advice to run away from the melee over the tempting supplies and weapons strewn in front of a structure called the Cornucopia. Peeta forms an uneasy alliance with the four Careers. They later find Katniss and corner her up a tree. Rue, hiding in a nearby tree, draws her attention to a poisonous tracker jacker nest hanging from a branch. Katniss drops it on her sleeping besiegers. They all scatter, except for Glimmer, who is killed by the insects. Hallucinating due to tracker jacker venom, Katniss is warned to run away by Peeta. Rue cares for Katniss for a couple of days until she recovers. Meanwhile, the alliance has gathered all the supplies into a pile. Katniss has Rue draw them off, then destroys the stockpile by setting off the mines planted around it. Furious, Cato kills the boy assigned to guard it. As Katniss runs from the scene, she hears Rue calling her name. She finds Rue trapped and releases her. Marvel, a tribute from District 1, throws a spear at Katniss, but she dodges the spear, causing it to stab Rue in the stomach instead. Katniss shoots him dead with an arrow. She then comforts the dying Rue with a song. Afterward, she gathers and arranges flowers around Rue's body. When this is televised, it sparks a riot in Rue's District 11. President Snow summons Seneca Crane, the Gamemaker, to express his displeasure at the way the Games are turning out. Since Katniss and Peeta have been presented to the public as "star-crossed lovers", Haymitch is able to convince Crane to make a rule change to avoid inciting further riots. It is announced that tributes from the same district can win as a pair. Upon hearing this, Katniss searches for Peeta and finds him with an infected sword wound in the leg. She portrays herself as deeply in love with him and gains a sponsor's gift of soup. An announcer proclaims a feast, where the thing each survivor needs most will be provided. Peeta begs her not to risk getting him medicine. Katniss promises not to go, but after he falls asleep, she heads to the feast. Clove ambushes her and pins her down. As Clove gloats, Thresh, the other District 11 tribute, kills Clove after overhearing her tormenting Katniss about killing Rue. He spares Katniss "just this time...for Rue". The medicine works, keeping Peeta mobile. Foxface, the girl from District 5, dies from eating nightlock berries she stole from Peeta; neither knew they are highly poisonous. Crane changes the time of day in the arena to late at night and unleashes a pack of hound-like creatures to speed things up. They kill Thresh and force Katniss and Peeta to flee to the roof of the Cornucopia, where they encounter Cato. After a battle, Katniss wounds Cato with an arrow and Peeta hurls him to the creatures below. Katniss shoots Cato to spare him a prolonged death. With Peeta and Katniss apparently victorious, the rule change allowing two winners is suddenly revoked. Peeta tells Katniss to shoot him. Instead, she gives him half of the nightlock. However, before they can commit suicide, they are hastily proclaimed the victors of the 74th Hunger Games. Haymitch warns Katniss that she has made powerful enemies after her display of defiance. She and Peeta return to District 12, while Crane is locked in a room with a bowl of nightlock berries, and President Snow considers the situation.'''
+# maker = eventMaker(line)
+# maker.getEvent()
+# for e in maker.events:
+# 	print(e)
+# with open('output.txt', 'w') as f:
+# 	for event in maker.events:
+# 		sentence = " ".join(event)
+# 		f.write(sentence)
+# 		f.write('\n')
+# quit()
 	#print(sentence+"@@@@"+line)
 
