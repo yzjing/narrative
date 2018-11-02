@@ -1,1 +1,3 @@
-put project package and other packages. 
+project package and other packages. 
+
+- Verbnet: the Verbnet classes and members.
