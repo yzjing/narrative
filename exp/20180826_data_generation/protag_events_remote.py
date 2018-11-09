@@ -6,7 +6,7 @@ data_path = '../../data/raw/MovieSummaries/indiv_summaries'
 
 
 files = [item for item in os.listdir(data_path) if '.txt' in item]
-finished = [item for item in os.listdir('../../data/protag_events_v2')]
+finished = [item for item in os.listdir('../../data/protag_events_gen_v_obj')]
 finished = set([item.split('_')[0] for item in finished])
 
 def rm_dups(elist):
@@ -37,7 +37,7 @@ for name in files:
 			# Use the character that appears most as the protagonist
 			protag = c.most_common(1)[0][0]
 			fil_events = [event for event in maker.events if event[0] == protag or event[2] == protag]
-			with open('../../data/protag_events_v2/' + name.split('.')[0] + '_protag_events.txt', 'w') as f:
+			with open('../../data/protag_events_nogen/' + name.split('.')[0] + '_protag_events.txt', 'w') as f:
 				for event in fil_events:
 					sentence = " ".join(event)
 					f.write(sentence)
