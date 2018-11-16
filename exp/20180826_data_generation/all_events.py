@@ -6,7 +6,7 @@ data_path = '../../data/raw/MovieSummaries/indiv_summaries'
 
 
 files = [item for item in os.listdir(data_path) if '.txt' in item]
-finished = [item for item in os.listdir('../../data/all_events')]
+finished = [item for item in os.listdir('../../data/all_events_gen_subj_obj')]
 finished = set([item.split('_')[0] for item in finished])
 
 def rm_dups(elist):
@@ -33,10 +33,11 @@ for name in files:
 			#Remove duplicates
 			events = rm_dups(events)
 	
-			with open('../../data/all_events/' + name.split('.')[0] + '_all_events.txt', 'w') as f:
+			with open('../../data/all_events_gen_subj_obj/' + name.split('.')[0] + '_all_events.txt', 'w') as f:
 				for event in events:
 					sentence = " ".join(event)
 					f.write(sentence)
 					f.write('\n')
 		except:
 			pass
+		
